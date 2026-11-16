@@ -125,6 +125,34 @@
     })();
   }
 
+  /* ---------- real visitor counter (#118) ---------- */
+  async function fetchRealVisitorCount() {
+    try {
+        const response = await fetch('https://api.countapi.xyz/hit/pipos-app/visits');
+        if (!response.ok) throw new Error('Counter service unavailable');
+        const data = await response.json();
+        return data.value;
+    } catch (error) {
+        // Fail silently and avoid unhandled console errors as required
+        console.debug('Real visitor counter skipped:', error.message);
+        return null;
+    }
+  }
+
+  async function initRealVisitorCounter() {
+    const container = document.getElementById('real-visitor-counter');
+    if (!container) return;
+
+    const count = await fetchRealVisitorCount();
+    if (count !== null) {
+        container.textContent = `Real Visitors: ${count.toLocaleString()}`;
+        container.style.display = 'block';
+    } else {
+        // Fail silently by hiding the element if the service is down
+        container.style.display = 'none';
+    }
+  }
+
   /* ---------- wish wall (shared backend with local fallback) ---------- */
   var SEEDS = [
     { n: 'Boo-ton', w: 'Pip fixed my hiccups with one note.' },
@@ -532,7 +560,7 @@
     loadLocalWishes: loadLocalWishes,
     saveLocalWish: saveLocalWish,
     deleteLocalWish: deleteLocalWish,
-    init: function () { initSparkles(); initOdometer(); initWall(); }
+    init: function () { initSparkles(); initOdometer(); initWall(); initRealVisitorCounter();}
   };
 
   if (typeof module !== 'undefined' && module.exports) {
