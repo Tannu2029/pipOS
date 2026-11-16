@@ -1028,7 +1028,52 @@ var col = theme.pal[idx % theme.pal.length];
     var total = pages.length;
     var current = 0;
 
+    var speechBtn = document.getElementById('storySpeechBtn');
+    var pauseBtn = document.getElementById('storyPauseBtn');
+    var stopBtn = document.getElementById('storyStopBtn');
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (speechBtn) speechBtn.hidden = false;
+      if (pauseBtn) { pauseBtn.hidden = true; pauseBtn.textContent = '⏸ Pause'; }
+      if (stopBtn) stopBtn.hidden = true;
+    }
+
+    if (speechBtn && 'speechSynthesis' in window) {
+      speechBtn.addEventListener('click', function () {
+        var activePage = pages[current];
+        if (!activePage) return;
+        var textToRead = (activePage.querySelector('h4')?.textContent || '') + '. ' + (activePage.querySelector('p')?.textContent || '');
+        window.speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.rate = 0.9;
+        utterance.onstart = function () {
+          speechBtn.hidden = true;
+          if (pauseBtn) pauseBtn.hidden = false;
+          if (stopBtn) stopBtn.hidden = false;
+        };
+        utterance.onend = stopSpeech;
+        window.speechSynthesis.speak(utterance);
+      });
+    } else if (speechBtn) {
+      speechBtn.style.display = 'none';
+    }
+
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', function () {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+          pauseBtn.textContent = '⏸ Pause';
+        } else if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.pause();
+          pauseBtn.textContent = '▶ Resume';
+        }
+      });
+    }
+    if (stopBtn) stopBtn.addEventListener('click', stopSpeech);
+
     function renderPage(idx) {
+      stopSpeech(); 
       current = clamp(idx, 0, total - 1);
       pages.forEach(function (page, i) {
         var isCur = i === current;
@@ -1093,7 +1138,7 @@ var col = theme.pal[idx % theme.pal.length];
       }
       touchStartX = 0;
     }, { passive: true });
-
+     
     renderPage(0);
   }
 
